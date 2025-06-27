@@ -57,65 +57,61 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="text-center animate-fade-in">
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-              AI-Powered
-              <span className="block bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                Investigation
-              </span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
+      {/* Hero Section - Cleaner and more focused */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-purple-600/5"></div>
+        <div className="relative max-w-4xl mx-auto px-6 py-24 text-center animate-fade-in">
+          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+            AI Investigation
+            <span className="block text-blue-600 dark:text-blue-400">
               Assistant
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-200 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Transform your investigation workflow with intelligent document processing, 
-              automated analysis, and conversational data insights.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/upload">
-                <Button className="gradient-button text-lg px-8 py-4 h-auto">
-                  Start Investigation
-                </Button>
-              </Link>
-              <Link to="/chat">
-                <Button variant="outline" className="text-lg px-8 py-4 h-auto border-white/30 text-white hover:bg-white/10">
-                  Try AI Chat
-                </Button>
-              </Link>
-            </div>
+            </span>
+          </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
+            Transform your investigation workflow with intelligent document processing and automated analysis.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/upload">
+              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                Start Investigation
+              </Button>
+            </Link>
+            <Link to="/chat">
+              <Button variant="outline" size="lg" className="px-8 py-4 rounded-xl border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                Try AI Chat
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Stats Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+      {/* Stats Section - More refined */}
+      <div className="max-w-6xl mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <Card key={index} className="gradient-card p-6 text-center animate-slide-up" style={{ animationDelay: `${index * 0.1}s` }}>
-                <div className="w-12 h-12 bg-gradient-primary rounded-xl mx-auto mb-4 flex items-center justify-center">
-                  <Icon className="w-6 h-6 text-white" />
+              <Card key={index} className="p-8 text-center bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 animate-slide-up" style={{ animationDelay: `${index * 0.1}s` }}>
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl mx-auto mb-6 flex items-center justify-center">
+                  <Icon className="w-8 h-8 text-white" />
                 </div>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{stat.value}</div>
-                <div className="text-gray-600 dark:text-gray-400">{stat.label}</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{stat.value}</div>
+                <div className="text-gray-600 dark:text-gray-400 font-medium">{stat.label}</div>
               </Card>
             );
           })}
         </div>
       </div>
 
-      {/* Features Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+      {/* Features Grid - Cleaner spacing and design */}
+      <div className="max-w-6xl mx-auto px-6 pb-24">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Complete Investigation Suite
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Everything you need to conduct thorough, efficient, and accurate investigations
+            Everything you need for thorough and efficient investigations
           </p>
         </div>
 
@@ -124,11 +120,11 @@ const Index = () => {
             const Icon = feature.icon;
             return (
               <Link key={index} to={feature.href}>
-                <Card className="gradient-card p-8 h-full hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] cursor-pointer group animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                <Card className="p-8 h-full bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] cursor-pointer group animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
                   <div className={`w-16 h-16 bg-gradient-to-r ${feature.gradient} rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
                     <Icon className="w-8 h-8 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
                     {feature.title}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -138,23 +134,6 @@ const Index = () => {
               </Link>
             );
           })}
-        </div>
-      </div>
-
-      {/* CTA Section */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 py-16">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Ready to revolutionize your investigations?
-          </h2>
-          <p className="text-xl text-blue-100 mb-8">
-            Join thousands of investigators using AI to solve cases faster and more accurately.
-          </p>
-          <Link to="/upload">
-            <Button className="bg-white text-indigo-600 hover:bg-gray-100 font-medium px-8 py-4 text-lg h-auto rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
-              Get Started Now
-            </Button>
-          </Link>
         </div>
       </div>
     </div>
