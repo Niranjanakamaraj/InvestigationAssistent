@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -199,7 +198,7 @@ const TaskCoPilot = () => {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Analysis Results
               </h2>
-              <div class="flex items-center space-x-2">
+              <div className="flex items-center space-x-2">
                 <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                   Complete
                 </Badge>
