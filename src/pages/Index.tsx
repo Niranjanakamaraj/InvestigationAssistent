@@ -65,8 +65,9 @@ const Index = () => {
           <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
             AI Investigation
             <span className="block text-blue-600 dark:text-blue-400">
-              Assistant
+              Assistant 
             </span>
+            for CDR/IPDR
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
             Transform your investigation workflow with intelligent document processing and automated analysis.

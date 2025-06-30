@@ -8,7 +8,7 @@ import { MessageCircle, X, Send, Bot } from 'lucide-react';
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { id: 1, text: "Hello! I'm your AI investigation assistant. Ask me anything about your data!", sender: 'bot' }
+    { id: 1, text: "Hello! I'm your AI investigation assistant.I'll help you use this website!", sender: 'bot' }
   ]);
   const [inputMessage, setInputMessage] = useState('');
 

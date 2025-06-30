@@ -1,16 +1,45 @@
-
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Filter, Database, ChevronDown, Link2, Eye, BarChart3 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
+import {
+  Search,
+  Database,
+  Link2,
+  Eye,
+  BarChart3,
+} from 'lucide-react';
+
+const chartTypes = ['bar', 'pie'] as const;
+type ChartType = (typeof chartTypes)[number];
 
 const ResultsExplorer = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterLevel, setFilterLevel] = useState('all');
+  const [visibleDetails, setVisibleDetails] = useState<number[]>([]);
+  const [visibleCharts, setVisibleCharts] = useState<Record<number, ChartType>>({});
+
+  const COLORS = ['#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
 
   const datasets = [
     {
@@ -21,12 +50,16 @@ const ResultsExplorer = () => {
       recordCount: 1247,
       createdDate: "2024-01-15",
       description: "Suspicious transaction patterns identified across multiple accounts",
+      details: "This dataset includes banking transactions flagged as suspicious based on amount thresholds and account behavior patterns.",
       preview: {
-        type: "table",
         columns: ["Date", "Amount", "Account", "Risk Score"],
         sampleData: [
           ["2024-01-10", "$12,500", "ACC-001", "High"],
           ["2024-01-12", "$8,750", "ACC-002", "Medium"]
+        ],
+        chartData: [
+          { label: "ACC-001", value: 12500 },
+          { label: "ACC-002", value: 8750 }
         ]
       },
       confidence: 94
@@ -39,10 +72,17 @@ const ResultsExplorer = () => {
       recordCount: 892,
       createdDate: "2024-01-14",
       description: "Phone calls and messages mapped to investigation timeline",
+      details: "Includes call logs, SMS metadata, and duration analysis to build a communication profile.",
       preview: {
-        type: "timeline",
-        events: 15,
-        dateRange: "Jan 1-15, 2024"
+        columns: ["Contact", "Calls", "Messages"],
+        sampleData: [
+          ["John", "23", "15"],
+          ["Emily", "10", "30"]
+        ],
+        chartData: [
+          { label: "John", value: 38 },
+          { label: "Emily", value: 40 }
+        ]
       },
       confidence: 87
     },
@@ -54,10 +94,17 @@ const ResultsExplorer = () => {
       recordCount: 456,
       createdDate: "2024-01-13",
       description: "Suspect locations correlated with incident timestamps",
+      details: "Uses geotags from multiple sources to verify the suspect’s movement pattern.",
       preview: {
-        type: "map",
-        locations: 23,
-        accuracy: "±50m"
+        columns: ["Location", "Visits"],
+        sampleData: [
+          ["Park Street", "5"],
+          ["Mall Road", "7"]
+        ],
+        chartData: [
+          { label: "Park Street", value: 5 },
+          { label: "Mall Road", value: 7 }
+        ]
       },
       confidence: 91
     },
@@ -69,11 +116,17 @@ const ResultsExplorer = () => {
       recordCount: 2341,
       createdDate: "2024-01-12",
       description: "Names, dates, and locations extracted from evidence documents",
+      details: "Entities are extracted using NLP-based techniques and grouped by entity type for deeper analysis.",
       preview: {
-        type: "entities",
-        people: 45,
-        places: 67,
-        dates: 123
+        columns: ["Entity Type", "Count"],
+        sampleData: [
+          ["People", "45"],
+          ["Places", "67"]
+        ],
+        chartData: [
+          { label: "People", value: 45 },
+          { label: "Places", value: 67 }
+        ]
       },
       confidence: 82
     }
@@ -81,212 +134,163 @@ const ResultsExplorer = () => {
 
   const filteredDatasets = datasets.filter(dataset => {
     const matchesSearch = dataset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         dataset.description.toLowerCase().includes(searchTerm.toLowerCase());
+      dataset.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || dataset.type === filterType;
     const matchesLevel = filterLevel === 'all' || dataset.intelligenceLevel === filterLevel;
-    
     return matchesSearch && matchesType && matchesLevel;
   });
 
   const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 90) return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-    if (confidence >= 80) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+    if (confidence >= 90) return 'bg-green-100 text-green-800';
+    if (confidence >= 80) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-red-100 text-red-800';
   };
 
   const getLevelColor = (level: string) => {
     switch (level) {
-      case 'High': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'Low': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+      case 'High': return 'bg-red-100 text-red-800';
+      case 'Medium': return 'bg-yellow-100 text-yellow-800';
+      case 'Low': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Results Explorer
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400">
-            Explore and analyze your derived datasets with advanced filtering and preview capabilities.
-          </p>
+    <div className="min-h-screen py-8 px-4 space-y-6">
+      {/* Filters and Search */}
+      <Card className="p-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search datasets..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="Financial">Financial</SelectItem>
+              <SelectItem value="Communication">Communication</SelectItem>
+              <SelectItem value="Geospatial">Geospatial</SelectItem>
+              <SelectItem value="Text Analysis">Text Analysis</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterLevel} onValueChange={setFilterLevel}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All Levels" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Levels</SelectItem>
+              <SelectItem value="High">High</SelectItem>
+              <SelectItem value="Medium">Medium</SelectItem>
+              <SelectItem value="Low">Low</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+      </Card>
 
-        {/* Filters and Search */}
-        <Card className="gradient-card p-6 mb-8 animate-slide-up">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search datasets..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 rounded-xl"
-                />
-              </div>
+      {/* Dataset Cards */}
+      {filteredDatasets.map(dataset => (
+        <Card key={dataset.id} className="p-6">
+          <div className="flex justify-between">
+            <div>
+              <h3 className="text-xl font-semibold">{dataset.name}</h3>
+              <p className="text-sm text-gray-600">{dataset.description}</p>
             </div>
-            
-            <div className="flex gap-4">
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-40 rounded-xl">
-                  <SelectValue placeholder="All Types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="Financial">Financial</SelectItem>
-                  <SelectItem value="Communication">Communication</SelectItem>
-                  <SelectItem value="Geospatial">Geospatial</SelectItem>
-                  <SelectItem value="Text Analysis">Text Analysis</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={filterLevel} onValueChange={setFilterLevel}>
-                <SelectTrigger className="w-40 rounded-xl">
-                  <SelectValue placeholder="All Levels" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="High">High</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="Low">Low</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex flex-col gap-1 items-end">
+              <Badge className={getLevelColor(dataset.intelligenceLevel)}>{dataset.intelligenceLevel}</Badge>
+              <Badge className={getConfidenceColor(dataset.confidence)}>{dataset.confidence}%</Badge>
             </div>
           </div>
-        </Card>
 
-        {/* Dataset Cards */}
-        <div className="grid gap-6">
-          {filteredDatasets.map((dataset, index) => (
-            <Card key={dataset.id} className="gradient-card p-6 animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-              <div className="flex flex-col lg:flex-row gap-6">
-                {/* Dataset Info */}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                        {dataset.name}
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-400 mb-3">
-                        {dataset.description}
-                      </p>
-                    </div>
-                    <div className="flex flex-col gap-2 ml-4">
-                      <Badge variant="secondary" className={getLevelColor(dataset.intelligenceLevel)}>
-                        {dataset.intelligenceLevel} Priority
-                      </Badge>
-                      <Badge variant="secondary" className={getConfidenceColor(dataset.confidence)}>
-                        {dataset.confidence}% Confidence
-                      </Badge>
-                    </div>
-                  </div>
+          <div className="mt-4 flex gap-2 flex-wrap">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setVisibleDetails(prev => prev.includes(dataset.id) ? prev.filter(i => i !== dataset.id) : [...prev, dataset.id])}
+            >
+              <Eye className="w-4 h-4 mr-1" /> View Details
+            </Button>
+            {chartTypes.map((type) => (
+              <Button
+                key={type}
+                size="sm"
+                variant="outline"
+                onClick={() => setVisibleCharts(prev => ({ ...prev, [dataset.id]: type }))}
+              >
+                <BarChart3 className="w-4 h-4 mr-1" /> {type.toUpperCase()}
+              </Button>
+            ))}
+          </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Type</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{dataset.type}</p>
+          {visibleDetails.includes(dataset.id) && (
+            <>
+              <p className="mt-4 text-gray-700">{dataset.details}</p>
+              <div className="mt-2 bg-gray-50 p-4 rounded">
+                <div className="text-sm text-gray-500 mb-2">Sample Data ({dataset.preview.columns.join(', ')})</div>
+                <div className="space-y-1">
+                  {dataset.preview.sampleData.map((row, idx) => (
+                    <div key={idx} className="text-xs text-gray-700">
+                      {row.join(' | ')}
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Records</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{dataset.recordCount.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Created</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{dataset.createdDate}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Confidence</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{dataset.confidence}%</p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" size="sm" className="rounded-lg">
-                      <Eye className="w-4 h-4 mr-2" />
-                      View Details
-                    </Button>
-                    <Button variant="outline" size="sm" className="rounded-lg">
-                      <BarChart3 className="w-4 h-4 mr-2" />
-                      Visualize
-                    </Button>
-                    <Button className="gradient-button text-sm px-4 py-2">
-                      <Link2 className="w-4 h-4 mr-2" />
-                      Chain Task
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Preview Section */}
-                <div className="lg:w-80">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">Data Preview</h4>
-                  
-                  {dataset.preview.type === 'table' && (
-                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl">
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                        Sample Data ({dataset.preview.columns.join(', ')})
-                      </div>
-                      <div className="space-y-1">
-                        {dataset.preview.sampleData.map((row, idx) => (
-                          <div key={idx} className="text-xs text-gray-700 dark:text-gray-300">
-                            {row.join(' | ')}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {dataset.preview.type === 'timeline' && (
-                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl">
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">Timeline Preview</div>
-                      <div className="text-sm text-gray-700 dark:text-gray-300">
-                        <p>{dataset.preview.events} events</p>
-                        <p>{dataset.preview.dateRange}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {dataset.preview.type === 'map' && (
-                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl">
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">Location Data</div>
-                      <div className="text-sm text-gray-700 dark:text-gray-300">
-                        <p>{dataset.preview.locations} locations</p>
-                        <p>Accuracy: {dataset.preview.accuracy}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {dataset.preview.type === 'entities' && (
-                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl">
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">Extracted Entities</div>
-                      <div className="text-sm text-gray-700 dark:text-gray-300">
-                        <p>People: {dataset.preview.people}</p>
-                        <p>Places: {dataset.preview.places}</p>
-                        <p>Dates: {dataset.preview.dates}</p>
-                      </div>
-                    </div>
-                  )}
+                  ))}
                 </div>
               </div>
-            </Card>
-          ))}
-        </div>
+            </>
+          )}
 
-        {filteredDatasets.length === 0 && (
-          <Card className="gradient-card p-12 text-center animate-fade-in">
-            <Database className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              No datasets found
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Try adjusting your search criteria or create new datasets from the Task Co-Pilot.
-            </p>
-          </Card>
-        )}
-      </div>
+          {visibleCharts[dataset.id] === 'bar' && (
+            <div className="mt-4 h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dataset.preview.chartData}>
+                  <XAxis dataKey="label" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {visibleCharts[dataset.id] === 'pie' && (
+            <div className="mt-4 h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={dataset.preview.chartData}
+                    dataKey="value"
+                    nameKey="label"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    label
+                  >
+                    {dataset.preview.chartData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </Card>
+      ))}
+
+      {filteredDatasets.length === 0 && (
+        <Card className="p-12 text-center">
+          <Database className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold mb-2">No datasets found</h3>
+          <p className="text-gray-600">Try adjusting your filters or search terms.</p>
+        </Card>
+      )}
     </div>
   );
 };
