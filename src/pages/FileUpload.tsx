@@ -1,13 +1,26 @@
-
 import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, FileText, FileSpreadsheet, File, X, Check } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import {
+  Upload,
+  FileText,
+  FileSpreadsheet,
+  File,
+  X,
+  Check,
+} from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 interface UploadedFile {
   id: string;
@@ -15,89 +28,116 @@ interface UploadedFile {
   type: string;
   size: number;
   icon: typeof FileText;
+  rawFile: File;
   metadata: {
     fileName: string;
     documentType: string;
     definition: string;
     intelligenceLevel: string;
   };
+  previewData?: string;
 }
 
 const FileUpload = () => {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const getFileIcon = (fileName: string) => {
-    const extension = fileName.split('.').pop()?.toLowerCase();
-    switch (extension) {
-      case 'pdf': return FileText;
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    switch (ext) {
+      case 'pdf':
       case 'docx':
-      case 'doc': return FileText;
+      case 'json':
+      case 'doc':
+        return FileText;
       case 'xlsx':
-      case 'xls': return FileSpreadsheet;
-      default: return File;
+      case 'xls':
+        return FileSpreadsheet;
+      default:
+        return File;
     }
   };
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+    setDragActive(e.type === 'dragenter' || e.type === 'dragover');
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
     const files = Array.from(e.dataTransfer.files);
     handleFiles(files);
   }, []);
 
-  const handleFiles = (files: File[]) => {
-    const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
-    
-    files.forEach((file) => {
-      if (validTypes.includes(file.type) || file.name.endsWith('.pdf') || file.name.endsWith('.docx') || file.name.endsWith('.xlsx')) {
+  const handleFiles = async (files: File[]) => {
+    const validTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/json',
+    ];
+
+    for (const file of files) {
+      if (
+        validTypes.includes(file.type) ||
+        ['.pdf', '.docx', '.xlsx', '.json'].some(ext => file.name.endsWith(ext))
+      ) {
+        let previewData = '';
+
+        if (file.type === 'application/json') {
+          const text = await file.text();
+          previewData = JSON.stringify(JSON.parse(text), null, 2);
+        } else if (
+          file.name.endsWith('.xlsx') ||
+          file.name.endsWith('.xls')
+        ) {
+          const data = await file.arrayBuffer();
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+          previewData = JSON.stringify(json, null, 2);
+        }
+
         const newFile: UploadedFile = {
           id: Math.random().toString(36).substr(2, 9),
           name: file.name,
           type: file.type,
           size: file.size,
           icon: getFileIcon(file.name),
+          rawFile: file,
           metadata: {
             fileName: file.name,
             documentType: 'Evidence',
             definition: '',
-            intelligenceLevel: 'Medium'
-          }
+            intelligenceLevel: 'Medium',
+          },
+          previewData,
         };
         setUploadedFiles(prev => [...prev, newFile]);
-        toast({
-          title: "File uploaded successfully",
-          description: `${file.name} has been added to your investigation.`,
-        });
+        toast({ title: 'File added', description: `${file.name} ready.` });
       } else {
         toast({
-          title: "File type not supported",
-          description: `${file.name} is not a supported file type. Please upload PDF, Word, or Excel files.`,
-          variant: "destructive"
+          title: 'Unsupported file',
+          description: `${file.name} is not supported.`,
+          variant: 'destructive',
         });
       }
-    });
+    }
   };
 
   const updateFileMetadata = (fileId: string, field: string, value: string) => {
-    setUploadedFiles(prev => prev.map(file => 
-      file.id === fileId 
-        ? { ...file, metadata: { ...file.metadata, [field]: value } }
-        : file
-    ));
+    setUploadedFiles(prev =>
+      prev.map(file =>
+        file.id === fileId
+          ? { ...file, metadata: { ...file.metadata, [field]: value } }
+          : file
+      )
+    );
   };
 
   const removeFile = (fileId: string) => {
@@ -112,6 +152,10 @@ const FileUpload = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const goToCopilot = () => {
+    navigate('/copilot');
+  };
+
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -124,12 +168,11 @@ const FileUpload = () => {
           </p>
         </div>
 
-        {/* Upload Area */}
         <Card className="gradient-card mb-8 animate-slide-up">
           <div
             className={`p-12 border-2 border-dashed rounded-2xl transition-all duration-300 ${
-              dragActive 
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+              dragActive
+                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                 : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
             }`}
             onDragEnter={handleDrag}
@@ -143,19 +186,16 @@ const FileUpload = () => {
                 Drop your files here
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Support for PDF, Word, and Excel documents
+                Support for PDF, Word, Excel, and JSON documents
               </p>
-              <Button 
-                className="gradient-button"
-                onClick={() => document.getElementById('file-input')?.click()}
-              >
+              <Button onClick={() => document.getElementById('file-input')?.click()}>
                 Choose Files
               </Button>
               <input
                 id="file-input"
                 type="file"
                 multiple
-                accept=".pdf,.docx,.xlsx"
+                accept=".pdf,.docx,.xlsx,.json"
                 className="hidden"
                 onChange={(e) => e.target.files && handleFiles(Array.from(e.target.files))}
               />
@@ -163,7 +203,6 @@ const FileUpload = () => {
           </div>
         </Card>
 
-        {/* Uploaded Files */}
         {uploadedFiles.length > 0 && (
           <div className="space-y-6 animate-fade-in">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -197,20 +236,18 @@ const FileUpload = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor={`fileName-${file.id}`}>File Name</Label>
+                        <Label>File Name</Label>
                         <Input
-                          id={`fileName-${file.id}`}
                           value={file.metadata.fileName}
                           onChange={(e) => updateFileMetadata(file.id, 'fileName', e.target.value)}
                           className="rounded-xl"
                         />
                       </div>
-
                       <div className="space-y-2">
-                        <Label htmlFor={`docType-${file.id}`}>Document Type</Label>
+                        <Label>Document Type</Label>
                         <Select
                           value={file.metadata.documentType}
-                          onValueChange={(value) => updateFileMetadata(file.id, 'documentType', value)}
+                          onValueChange={(val) => updateFileMetadata(file.id, 'documentType', val)}
                         >
                           <SelectTrigger className="rounded-xl">
                             <SelectValue />
@@ -224,23 +261,20 @@ const FileUpload = () => {
                           </SelectContent>
                         </Select>
                       </div>
-
                       <div className="space-y-2">
-                        <Label htmlFor={`definition-${file.id}`}>Definition</Label>
+                        <Label>Definition</Label>
                         <Input
-                          id={`definition-${file.id}`}
                           value={file.metadata.definition}
                           onChange={(e) => updateFileMetadata(file.id, 'definition', e.target.value)}
                           placeholder="Brief description..."
                           className="rounded-xl"
                         />
                       </div>
-
                       <div className="space-y-2">
-                        <Label htmlFor={`intelligence-${file.id}`}>Intelligence Level</Label>
+                        <Label>Intelligence Level</Label>
                         <Select
                           value={file.metadata.intelligenceLevel}
-                          onValueChange={(value) => updateFileMetadata(file.id, 'intelligenceLevel', value)}
+                          onValueChange={(val) => updateFileMetadata(file.id, 'intelligenceLevel', val)}
                         >
                           <SelectTrigger className="rounded-xl">
                             <SelectValue />
@@ -254,23 +288,36 @@ const FileUpload = () => {
                         </Select>
                       </div>
                     </div>
+
+                    <div className="mt-6">
+                      <Label className="block mb-1">Preview</Label>
+                      {file.type === 'application/pdf' && (
+                        <iframe
+                          title={file.name}
+                          src={URL.createObjectURL(file.rawFile)}
+                          className="w-full h-64 rounded-xl border"
+                        />
+                      )}
+                      {file.type === 'application/json' || file.name.endsWith('.xlsx') || file.name.endsWith('.xls') ? (
+                        <pre className="bg-gray-100 dark:bg-gray-800 text-sm p-4 rounded-xl overflow-auto">
+                          {file.previewData}
+                        </pre>
+                      ) : null}
+                    </div>
                   </Card>
                 );
               })}
             </div>
 
-            {/* Action Buttons */}
             <div className="flex justify-between items-center pt-6">
               <div className="flex items-center space-x-2 text-green-600 dark:text-green-400">
                 <Check className="w-5 h-5" />
-                <span className="font-medium">{uploadedFiles.length} files ready for processing</span>
+                <span className="font-medium">{uploadedFiles.length} files ready</span>
               </div>
-              
-              <Link to="/copilot">
-                <Button className="gradient-button px-8 py-3 text-lg">
-                  Continue to Co-Pilot →
-                </Button>
-              </Link>
+
+              <Button onClick={goToCopilot} className="gradient-button px-8 py-3 text-lg">
+                Continue to Co-Pilot →
+              </Button>
             </div>
           </div>
         )}
